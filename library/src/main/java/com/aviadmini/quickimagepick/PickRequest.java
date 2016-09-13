@@ -310,8 +310,23 @@ public class PickRequest {
     private Intent prepareCameraIntent(@NonNull final Uri pOutputFileUri) {
 
         this.mLastCameraUriString = pOutputFileUri.toString();
+        Intent camIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, pOutputFileUri);
 
-        return new Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, pOutputFileUri);
+        grantCameraPermission(camIntent, pOutputFileUri);
+
+        return camIntent;
+    }
+
+    /**
+     * Grant camera permissions so that pre lollipop devices can access the camera and return an image.
+     * @param camIntent the intent to grant permissions to
+     */
+    private void grantCameraPermission(Intent camIntent, Uri uri) {
+        List<ResolveInfo> resInfoList = mContext.getPackageManager().queryIntentActivities(camIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        for (ResolveInfo resolveInfo : resInfoList) {
+            String packageName = resolveInfo.activityInfo.packageName;
+            mContext.grantUriPermission(packageName, uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
     }
 
     /**
@@ -446,6 +461,8 @@ public class PickRequest {
                     intent.setPackage(packageName);
                     intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiPick);
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
+                    intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    mContext.grantUriPermission(packageName, outputFileUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
                     cameraIntents.add(intent);
 
